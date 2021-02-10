@@ -1,0 +1,213 @@
+---
+title: "TaRKD2 RNAseq"
+author: "Cathal Meehan"
+date: "08/1/2020"
+output:
+  prettydoc::html_pretty:
+    theme: cayman
+    highlight: github
+    toc: TRUE
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = F)
+```
+
+---
+  
+# TaRKD2 RNAseq quality control
+
+All samples were downloaded from Novogene to the server and trimmed/quality controlled simultaneously. All samples passed quality checks and were pseudoaligned using kallisto to the IWGSC v1.1 RefSeq assembly with good alignment as highlighted in table 1B. Following this we imported raw counts into R and analysed using DESeq2.
+
+## Fastp quality control report
+```{r, echo=FALSE, fig.cap="_**Figure 1A.**_ Quality control and trimming performed by fastp. Reports were collated together using MultiQC", out.width = '100%', eval = T, fig.align='center', fig.show='hold'}
+Quality_fastp <- read.table('/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Quality_fastp.txt', sep='\t',header = T)
+knitr::kable(Quality_fastp)
+```
+
+## Kallisto pseudoalignment statistics
+```{r, echo=FALSE, fig.cap="_**Figure 1B.**_ Kallisto quant pseudoalignment statistics", out.width = '100%', eval = T, fig.align='center', fig.show='hold'}
+kallisto <- read.table('/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/kallisto pseduoalignments.txt', sep='\t',header = T)
+knitr::kable(kallisto)
+```
+
+# Dispersion plot estimates and fitting from DESeq2 normalisation
+
+DESeq2 normalisation involves estimating the dispersion (variation) of counts within each gene based on the inputted samples. DESeq2 fits them all to rough estimates of how much dispersion should be happening and excludes those that don't fit the trend.
+
+```{r, echo=FALSE, fig.cap="_**Figure 2A.**_ Dispersion estimates DESeq2", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Dispersion plot.jpeg")
+```
+
+# Normalised counts of TaRKD1-7A, 7B, 7D and synTaRKD1-7D
+
+Normalised counts of natural and synthetic TaRKD1s in our samples. Good expression of synTaRKD1-7D with a little TaRKD1-7B in one of the sample but this is likely mismapping. Expression is higher in meristem tissue than immature embryo tissue.
+
+```{r, echo=FALSE, fig.cap="_**Figure 3A.**_ Normalised counts for TaRKD1-7A plotted with ggplotCounts", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Normalised counts for TaRKD1-7A.jpeg")
+```
+
+```{r, echo=FALSE, fig.cap="_**Figure 3B.**_ Normalised counts for TaRKD1-7B plotted with ggplotCounts", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Normalised counts for TaRKD1-7B.jpeg")
+```
+
+```{r, echo=FALSE, fig.cap="_**Figure 3C.**_ Normalised counts for TaRKD1-7D plotted with ggplotCounts", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Normalised counts for TaRKD1-7D.jpeg")
+```
+
+```{r, echo=FALSE, fig.cap="_**Figure 3D.**_ Normalised counts for synTaRKD2 plotted with ggplotCounts", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Normalised counts synTaRKD2.jpeg")
+```
+
+# PCA analysis of normalised counts
+
+PCA shows good seperation between tissue types along PC1 (95% variance), while the meristem samples are seperated along PC2 (4% variance) according to the presence of DMSO + Estradiol in treatements. There appears to be greater seperation between meristem tissue samples than immature embryo tissue. 
+
+```{r, echo=FALSE, fig.cap="_**Figure 4A.**_ PCA of all samples", out.width = '100%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/PCA all.jpeg")
+```
+
+Similar to the Leaf TaRKD2 RNAseq TE and TM have distinct expression profiles relative to the wild type which might be due to dosage specific effects on the transcriptional network. For these samples I will use use overlapping (shared) diffrentially expressed genes between (TE vs WE) and (TM vs WE).
+
+```{r, echo=FALSE, fig.cap="_**Figure 4B.**_ PCA of Immature embryo samples", out.width = '100%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Immature embryo PCA.jpeg")
+```
+
+Meristem tissue doesn't look great from what I can tell. What this PCA suggests is that the main seperation between these samples is those with DMSO in the treatment and those without (94% variance). Maybe the majority of the tissue we extracted was too diffrentiated? Laser microdissection or single cell RNAseq would probably be the only way to resolve this.
+
+```{r, echo=FALSE, fig.cap="_**Figure 4C.**_ PCA of Meristem samples", out.width = '100%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/PCA meristem.jpeg")
+```
+  
+# Venn diagram of diffrential comparisons
+
+Pairwise differential comparisons were carried out on normalised counts at an adjusted p value (Benjamini-Hochberg) of 0.01 with an lfcThreshold of 0 (lfcThreshold=1 resulted in very few DEGs). We've 1030 DEGs for shared diffrential comparison between TE and TM comparisons to WN with good results downstream for functional analysis and there are 418 dosage related DEGs for the TE vs TM comparison. 
+
+```{r, echo=FALSE, fig.cap="_**Figure 5A.**_ PCA of IE samples", out.width = '50%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Immature embryo venn diagram.png")
+```
+
+Higher number of DEGs for TN vs WN comparison and some dosage dependent effect for the TE vs TM comparison. 
+
+```{r, echo=FALSE, fig.cap="_**Figure 5B.**_ PCA of Meristem samples", out.width = '50%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Meristem venn diagram.png")
+```
+
+# Enhanced Volcano plot of differential comparisons
+
+Can't use diffrential comparisons for shared DEGS so I've used Immature embryo TE vs WE here. We can see there is more upregulation than downregulation, however the logfold change isn't massive.
+
+```{r, echo=FALSE, fig.cap="_**Figure 6A.**_ Enhanced volcano plot IE TE vs WE", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Enhanced_volcano_IE_TE_WE.jpeg")
+```
+
+Equal amount of upregulation and downregulation in the meristem comparison with high logfold change values for TN vs WN. There are some decent functional terms in this comparison from what I've seen.
+
+```{r, echo=FALSE, fig.cap="_**Figure 6B.**_ Enhanced volcano plot Meristem TN vs WN", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Enhanced volcano TN vs WN Meristem.jpeg")
+```
+
+
+# Heatmaps
+  
+Immature embryo shared DEGS show good heatmap clustering with a nice dosage specific trend between those in the TM and those in the TE category for both upregulated and downregulated WN genes. This will be a nice comparison to characterise the phenotype.
+
+```{r, echo=FALSE, fig.cap="_**Figure 7A.**_ Heatmap IE (TE vs NE DEGs)", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Immature embryo heatmap (TE vs NE DEGs).jpeg")
+```
+
+We can see clearly see here that the TN vs WN is notreliable by itself as it shows many difference to TM and TE. However if we intersect all of the differential comprisons to WN we can see a subsection of DEGs that might explain our phenotype in vegetative tissue.
+
+```{r, echo=FALSE, fig.cap="_**Figure 7B.**_ Heatmap Meristem (TN vs WN DEGs)", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Heatmap TN vs WN DEGs expression across samples.jpeg")
+```
+
+
+# GO term analysis of Upregulated DEGs
+  
+Gene ontology term analysis was carried out on upregulated DEGs for pairwise comparisons using gProfiler at a signficance of 0.05 using gProfiler's custom FDR. I've annotated terms that I thought were relevant with their significance statistics below. Shared upregulated Immature Embryo DEGs show a nice enrichment of terms involved in transcription factor binding, chromatin packaging and accessability which is consistent with what we've observed with histone H4.
+
+```{r, echo=FALSE, fig.cap="_**Figure 8A.**_ gProfiler GO term analysis IE Shared DEGs", out.width = '100%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/gProfiler_IE_0.01with0.05.png")
+```
+
+GO term analysis of Meristem tissue showed statistical enrichment of a few terms that could be construed to be involved in cell division such as cell wall related terms but this might be a stretch.
+
+```{r, echo=FALSE, fig.cap="_**Figure 8B.**_ gProfiler GO term analysis Meristem Shared DEGs", out.width = '100%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/gprofile_Meristem_Shared_upregulated_0.01_with_0.05.png")
+```
+
+TE vs TM in both tissues just shows enrichment of transcription factor and ATPase processes which is consistent with dosage dependent changes of transcription factor expression.
+
+```{r, echo=FALSE, fig.cap="_**Figure 8C.**_ gProfiler GO term analysis IE TE vs TM DEGs", out.width = '100%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/gProfiler_IE_TE_vs_TM_0.05with0.01.png")
+```
+
+```{r, echo=FALSE, fig.cap="_**Figure 8D.**_ gProfiler GO term analysis Meristem TE vs TM DEGs", out.width = '100%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/gProfiler_TEvsTM_Meristems_0.01with0.05.png")
+```
+
+# Enrichment of Transcription Factor expression
+
+Here I've used a program called gage to investigate whether there is significant differences in the expression of Transcription Factor families in indTaRKD1-7D Immature embryos vs WT Immature embryos + indTaRKD1-7D meristems vs WT meristems.
+
+For the immature embryo enrichment we see a high enrichment in expression of NAC TFs which agrees nicely with our phenotype as well as AP2 TFs which should lead us into a nice self citation with OsRKD3. Downregulation of ARF could agree with the fact that most meristematic processes are cytokinin related?
+
+```{r, echo=FALSE, fig.cap="_**Figure 9A.**_ GAGE Transcription factor expression enrichment IE indTaRKD1-7D vs WT", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/TF_enrichment_Immature embryo.jpeg")
+```
+
+For meristem tissue we can see clear enrichment of AP2 once again as well as WRKY and tify (Jasmonate regulators). I prefer the immature embryo TF enrichment though as NAC really stands out.
+
+```{r, echo=FALSE, fig.cap="_**Figure 9B.**_ GAGE Transcription factor expression enrichment Meristem indTaRKD1-7D vs WT", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/TF enrichment meristem (3 ref, 9 samp).jpeg")
+```
+
+# Normalised counts of interesting genes - Immature embryos
+
+All plots were made by using a script from the the IDEAL package called ggplotCounts. I selected DEGs by overlapping them with various dataset, inputting these to BioMart and chose the ones that looked most relevant to tillering/spike development.
+
+## Immature embryos DEGs that overlap with Microspore dataset
+
+MYB related transcription factor that has a methyltransferase downstream and a Sucrose synthase.
+
+```{r, echo=FALSE, fig.cap="_**Figure 10A.**_ Normalised counts MYB", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Normalised counts MYB.jpeg")
+```
+
+```{r, echo=FALSE, fig.cap="_**Figure 10B.**_ Normalised counts Sucrose", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Normalised counts Sucrose.jpeg")
+```
+
+## Immature embryos DEGs that overlap with NIL High tillering dataset
+
+2 Histone H4 homeologues and UCL8 that has been reported in literature to confer higher grain yield in rice.
+
+```{r, echo=FALSE, fig.cap="_**Figure 10C.**_ Normalised counts Histone H4 B", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Normalised counts H4 B.jpeg")
+```
+
+```{r, echo=FALSE, fig.cap="_**Figure 10D.**_ Normalised counts Histone H4 D", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Normalised counts H4 D.jpeg")
+```
+
+```{r, echo=FALSE, fig.cap="_**Figure 10E.**_ Normalised counts UCL8", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Normalised counts UCL8.jpeg")
+```
+
+## Immature embryos TF DEGs 
+
+NAC NLT5 (flowering time supp), OsCOL4 (flowering time suppressor), and MADS51.
+
+```{r, echo=FALSE, fig.cap="_**Figure 10F.**_ Normalised counts NLT5", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Normalised counts NLT5.jpeg")
+```
+
+```{r, echo=FALSE, fig.cap="_**Figure 10G.**_ Normalised counts OsCOL4", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Normalised counts OsCOL4.jpeg")
+```
+
+```{r, echo=FALSE, fig.cap="_**Figure 10H.**_ Normalised counts MADS51", out.width = '70%', eval = T, fig.align='center', fig.show='hold'}
+knitr::include_graphics("/Users/u1762824/Documents/Wheat/Transcriptomics_analysis/RKD_2021/data/3_aligned/Normalised counts MADS51.jpeg")
+```
